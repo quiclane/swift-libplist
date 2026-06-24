@@ -1,8 +1,8 @@
 # swift-libplist
 
 [libplist](https://github.com/libimobiledevice/libplist) **2.7.0**, repackaged as a
-binary **Swift Package** for **iOS**. Drop the repo URL into Xcode and you get the full
-libplist C API (and the optional C++ wrapper) as a prebuilt, multi-architecture
+binary **Swift Package** for **macOS and iOS**. Drop the repo URL into Xcode and you get
+the full libplist C API (and the optional C++ wrapper) as a prebuilt, multi-architecture
 `XCFramework` — no autotools, no build step, no `main` symbol to collide with your app.
 
 ```
@@ -13,14 +13,14 @@ https://github.com/quiclane/swift-libplist
 
 1. **File ▸ Add Package Dependencies…**
 2. Paste the URL above.
-3. Dependency rule: **Up to Next Major Version** from `2.7.0` (or pin **Exact** `2.7.0`).
+3. Dependency rule: **Up to Next Major Version** from `2.7.1` (or pin **Exact** `2.7.1`).
 4. Add the **`plist`** library product to your app target.
 
 ### Or in `Package.swift`
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/quiclane/swift-libplist.git", from: "2.7.0")
+    .package(url: "https://github.com/quiclane/swift-libplist.git", from: "2.7.1")
 ],
 targets: [
     .target(name: "MyApp", dependencies: [
@@ -59,7 +59,8 @@ From C / Objective-C(++) the headers resolve with angle brackets:
 
 | Path | Description |
 |------|-------------|
-| `plist.xcframework/` | Binary framework used by SwiftPM (iOS device + simulator slices). |
+| `plist.xcframework/` | Binary framework used by SwiftPM (macOS + iOS device + iOS simulator slices). |
+| `libplist-macos.a` | macOS static library (`arm64` + `x86_64`). |
 | `libplist-ios.a` | iOS **device** static library (`arm64`). |
 | `libplist-ios-sim.a` | iOS **simulator** static library (`arm64` + `x86_64`). |
 | `include/plist/*.h` | Public headers — add `-Iinclude` and `#include <plist/plist.h>` for manual/non-SwiftPM use. |
@@ -73,13 +74,14 @@ built, so the archives export **no `main` symbol**.
 
 | Slice | Architectures | Min deployment |
 |-------|---------------|----------------|
+| macOS | `arm64`, `x86_64` | macOS 11.0 |
 | iOS device | `arm64` | iOS 13.0 |
 | iOS simulator | `arm64`, `x86_64` | iOS 13.0 |
 
 ## Rebuilding / bumping the libplist version
 
 ```sh
-LIBPLIST_TAG=2.7.0 MIN_IOS=13.0 scripts/build-xcframework.sh
+LIBPLIST_TAG=2.7.0 MIN_IOS=13.0 MIN_MAC=11.0 scripts/build-xcframework.sh
 ```
 
 Requires Xcode, autoconf/automake/libtool, and pkg-config (`brew install autoconf automake libtool pkg-config`).
@@ -89,8 +91,14 @@ The script clones the pinned upstream tag, runs `./configure` once to generate `
 
 ## Versioning
 
-Tags are **immutable** and mirror the upstream libplist release they wrap. `2.7.0` here is
-libplist `2.7.0`. Pin to an exact tag for fully reproducible builds.
+Tags are **immutable** — once published they are never moved or deleted. The
+`major.minor` of a tag mirrors the upstream libplist release it wraps; the `patch`
+component is the packaging revision. Pin to an exact tag for fully reproducible builds.
+
+| Tag | libplist | Platforms |
+|-----|----------|-----------|
+| `2.7.0` | 2.7.0 | iOS only |
+| `2.7.1` | 2.7.0 | macOS + iOS |
 
 ## License
 

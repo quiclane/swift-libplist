@@ -14,18 +14,20 @@
 #
 # Output (relative to repo root):
 #   plist.xcframework/         multi-platform binary framework (SwiftPM binaryTarget)
+#   libplist-macos.a           macOS static lib (arm64 + x86_64)
 #   libplist-ios.a             iOS device static lib (arm64)
 #   libplist-ios-sim.a         iOS simulator static lib (arm64 + x86_64)
 #   include/plist/*.h          public headers (so <plist/plist.h> resolves with -Iinclude)
 #   LICENSE / COPYING.LESSER   upstream LGPL-2.1 license text
 #
 # Usage:  scripts/build-xcframework.sh
-# Env:    LIBPLIST_TAG (default 2.7.0), MIN_IOS (default 13.0)
+# Env:    LIBPLIST_TAG (default 2.7.0), MIN_IOS (default 13.0), MIN_MAC (default 11.0)
 #
 set -euo pipefail
 
 LIBPLIST_TAG="${LIBPLIST_TAG:-2.7.0}"
 MIN_IOS="${MIN_IOS:-13.0}"
+MIN_MAC="${MIN_MAC:-11.0}"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BUILD="$(mktemp -d "${TMPDIR:-/tmp}/libplist-build.XXXXXX")"
@@ -77,7 +79,8 @@ build_slice() {
   libtool -static -o "$OUT/lib/libplist-$name.a" "$objdir"/*.o "$objdir"/*.oxx
 }
 
-# ---- iOS slices ------------------------------------------------------------
+# ---- platform slices -------------------------------------------------------
+build_slice macos   macosx          "-mmacosx-version-min=$MIN_MAC"        -arch arm64 -arch x86_64
 build_slice ios     iphoneos        "-miphoneos-version-min=$MIN_IOS"      -arch arm64
 build_slice ios-sim iphonesimulator "-mios-simulator-version-min=$MIN_IOS" -arch arm64 -arch x86_64
 
@@ -96,6 +99,7 @@ EOF
 echo "==> creating plist.xcframework ..."
 rm -rf "$OUT/plist.xcframework"
 xcodebuild -create-xcframework \
+  -library "$OUT/lib/libplist-macos.a"   -headers "$OUT/headers" \
   -library "$OUT/lib/libplist-ios.a"     -headers "$OUT/headers" \
   -library "$OUT/lib/libplist-ios-sim.a" -headers "$OUT/headers" \
   -output "$OUT/plist.xcframework" >/dev/null
@@ -104,6 +108,7 @@ xcodebuild -create-xcframework \
 echo "==> publishing artifacts to repo root ..."
 rm -rf "$REPO_ROOT/plist.xcframework" "$REPO_ROOT/include"
 cp -R "$OUT/plist.xcframework" "$REPO_ROOT/plist.xcframework"
+cp "$OUT/lib/libplist-macos.a"   "$REPO_ROOT/libplist-macos.a"
 cp "$OUT/lib/libplist-ios.a"     "$REPO_ROOT/libplist-ios.a"
 cp "$OUT/lib/libplist-ios-sim.a" "$REPO_ROOT/libplist-ios-sim.a"
 mkdir -p "$REPO_ROOT/include/plist"
