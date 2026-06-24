@@ -1,0 +1,4 @@
+module plist {
+    header "plist/plist.h"
+    export *
+}
